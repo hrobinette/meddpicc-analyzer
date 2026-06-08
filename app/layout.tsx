@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { AUTH_COOKIE, authToken } from "@/lib/auth";
+import { Logo } from "@/components/Logo";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,9 +29,7 @@ export default async function RootLayout({
           <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur">
             <div className="mx-auto flex h-14 max-w-5xl items-center px-6">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-500 text-sm font-bold text-white shadow-sm">
-                  M
-                </span>
+                <Logo />
                 <span className="font-semibold tracking-tight text-slate-900">
                   MEDDPICC Analyzer
                 </span>

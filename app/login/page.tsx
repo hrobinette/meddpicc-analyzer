@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Logo } from "@/components/Logo";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -34,9 +35,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="flex flex-col items-center text-center">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-lg font-bold text-white shadow-sm">
-              M
-            </span>
+            <Logo className="h-11 w-11 rounded-xl" iconClassName="h-6 w-6" />
             <h1 className="mt-4 text-xl font-bold tracking-tight text-slate-900">
               MEDDPICC Analyzer
             </h1>
