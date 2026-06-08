@@ -153,15 +153,15 @@ function ElementCard({
         </p>
 
         {result.nextQuestion ? (
-          <div className="mt-3 rounded-lg bg-indigo-50/70 p-3 ring-1 ring-indigo-100">
+          <div className="mt-3 rounded-lg bg-blue-50/70 p-3 ring-1 ring-blue-100">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-indigo-500">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-brand-blue">
                 Ask next
               </p>
               <button
                 type="button"
                 onClick={() => onCopy(result.nextQuestion, askKey)}
-                className="text-[11px] font-medium text-indigo-500 transition hover:text-indigo-700"
+                className="text-[11px] font-medium text-brand-blue transition hover:text-brand-navy"
               >
                 {isCopied ? "✓ copied" : "copy"}
               </button>
@@ -190,7 +190,7 @@ function ElementCard({
             type="button"
             onClick={() => onCopy(`${result.element}: ${result.value.trim()}`, cardKey)}
             title="Copy this element"
-            className="text-xs font-medium text-slate-400 transition hover:text-indigo-600"
+            className="text-xs font-medium text-slate-400 transition hover:text-brand-blue"
           >
             {cardCopied ? "✓ copied" : "copy"}
           </button>
@@ -211,7 +211,7 @@ function ElementCard({
         value={result.value}
         onChange={(e) => onValueChange(e.target.value)}
         rows={3}
-        className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-800 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+        className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-800 transition focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
       />
 
       {/* Named people — copy just the name for a Salesforce contact */}
@@ -230,7 +230,7 @@ function ElementCard({
                   type="button"
                   onClick={() => onCopy(person.name, key)}
                   title={`Copy "${person.name}" to add as a Salesforce contact`}
-                  className="group inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50"
+                  className="group inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 transition hover:border-blue-300 hover:bg-blue-50"
                 >
                   <span className="font-medium text-slate-800">{person.name}</span>
                   {person.title ? (
@@ -239,8 +239,8 @@ function ElementCard({
                   <span
                     className={
                       isCopied
-                        ? "ml-1 font-medium text-indigo-600"
-                        : "ml-1 text-slate-400 group-hover:text-indigo-500"
+                        ? "ml-1 font-medium text-brand-blue"
+                        : "ml-1 text-slate-400 group-hover:text-brand-blue"
                     }
                   >
                     {isCopied ? "✓ copied" : "copy name"}
@@ -385,7 +385,7 @@ export default function Analyzer() {
                 type="button"
                 onClick={loadExample}
                 disabled={loading}
-                className="text-xs font-medium text-indigo-600 transition hover:text-indigo-800 disabled:opacity-40"
+                className="text-xs font-medium text-brand-blue transition hover:text-brand-navy disabled:opacity-40"
               >
                 Try an example
               </button>
@@ -396,7 +396,7 @@ export default function Analyzer() {
               onChange={(e) => setTranscript(e.target.value)}
               rows={11}
               placeholder="Paste the full sales call transcript here…"
-              className="mt-1.5 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+              className="mt-1.5 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm shadow-sm transition focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
@@ -413,7 +413,7 @@ export default function Analyzer() {
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="Any extra context from the rep…"
-              className="mt-1.5 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+              className="mt-1.5 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm shadow-sm transition focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
@@ -421,7 +421,7 @@ export default function Analyzer() {
             <button
               onClick={handleAnalyze}
               disabled={!canAnalyze}
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-indigo-700 hover:to-violet-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? (
                 <>
@@ -474,14 +474,14 @@ export default function Analyzer() {
               <h2 className="text-lg font-semibold text-slate-900">
                 MEDDPICC summary
               </h2>
-              <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">
+              <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-brand-blue ring-1 ring-blue-100">
                 {foundCount} of 8 found
               </span>
             </div>
             <button
               type="button"
               onClick={() => copy(buildSalesforceText(cards), "salesforce")}
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-indigo-700 hover:to-violet-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               {copiedKey === "salesforce" ? "✓ Copied" : "Copy for Salesforce"}
             </button>

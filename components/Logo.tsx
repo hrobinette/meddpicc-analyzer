@@ -1,4 +1,4 @@
-// App logo: a clipboard-check icon on the indigo→violet gradient square.
+// App logo: a clipboard-check icon on the brand blue→navy gradient square.
 // Reused in the header and on the login page so they stay in sync.
 export function Logo({
   className = "h-7 w-7 rounded-md",
@@ -9,7 +9,7 @@ export function Logo({
 }) {
   return (
     <span
-      className={`flex items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-sm ${className}`}
+      className={`flex items-center justify-center bg-gradient-to-br from-brand-blue to-brand-navy text-white shadow-sm ${className}`}
     >
       <svg
         className={iconClassName}

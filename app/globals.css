@@ -10,7 +10,7 @@ body {
   @apply bg-gray-50 text-slate-900 antialiased;
 }
 
-/* Indigo selection to match the accent */
+/* Brand-blue selection to match the accent */
 ::selection {
-  @apply bg-indigo-100 text-indigo-900;
+  @apply bg-blue-100 text-brand-navy;
 }

@@ -25,7 +25,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="min-h-screen bg-gradient-to-b from-indigo-50/70 via-gray-50 to-gray-50">
+        <div className="min-h-screen bg-gradient-to-b from-blue-50/70 via-gray-50 to-gray-50">
           <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur">
             <div className="mx-auto flex h-14 max-w-5xl items-center px-6">
               <div className="flex items-center gap-2.5">
@@ -37,7 +37,7 @@ export default async function RootLayout({
               {authed ? (
                 <a
                   href="/api/logout"
-                  className="ml-auto text-sm font-medium text-slate-500 transition hover:text-indigo-600"
+                  className="ml-auto text-sm font-medium text-slate-500 transition hover:text-brand-blue"
                 >
                   Sign out
                 </a>

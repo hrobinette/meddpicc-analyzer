@@ -6,7 +6,17 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        // AppOmni-inspired brand palette (navy + bright blue).
+        brand: {
+          navy: "#0A1E46",
+          blue: "#1C6BEB",
+          sky: "#4FA0FF",
+          dark: "#07142E",
+        },
+      },
+    },
   },
   plugins: [],
 };

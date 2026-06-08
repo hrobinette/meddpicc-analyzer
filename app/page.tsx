@@ -6,7 +6,7 @@ export default function Home() {
       <header className="mb-8 max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
           Turn a sales call into a{" "}
-          <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-brand-blue to-brand-navy bg-clip-text text-transparent">
             MEDDPICC
           </span>{" "}
           summary
