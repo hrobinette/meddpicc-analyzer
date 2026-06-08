@@ -763,16 +763,19 @@ export default function Analyzer() {
               <button
                 type="button"
                 onClick={() => copy(buildSalesforceText(cards, risks), "salesforce")}
+                title="Copy this summary, then paste it into the Notes field on the Salesforce opportunity"
                 className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-blue-300"
               >
-                {copiedKey === "salesforce" ? "✓ Copied" : "Copy for Salesforce"}
+                {copiedKey === "salesforce" ? "✓ Copied — paste into Salesforce" : "Copy Salesforce note"}
               </button>
             </div>
           </div>
 
           <p className="mt-1 text-xs text-slate-400">
-            Edit any summary before copying. Click a person’s name to copy it for a
-            Salesforce contact.
+            <span className="font-medium text-slate-500">Copy Salesforce note</span>{" "}
+            copies this whole summary — paste it straight into the Notes field on
+            the Salesforce opportunity. Edit any summary first; click a person’s
+            name to copy it for a contact.
           </p>
 
           {/* Risks & red flags */}
