@@ -31,9 +31,11 @@ Rules:
     "status": "found" | "not_addressed",
     "value": "<concise summary of what was found, or empty string>",
     "evidence": "<short supporting quote or paraphrase from the input, or empty string>",
-    "people": [ { "name": "<person's name>", "title": "<their role/title, or empty string>" } ]
+    "people": [ { "name": "<person's name>", "title": "<their role/title, or empty string>" } ],
+    "nextQuestion": "<one concise question the rep should ask next time to uncover or strengthen this element>"
   }
 - In "people", list any specifically named individuals relevant to that element — most often the Economic Buyer and the Champion, but also any named stakeholders. Only include a person when an actual name is given in the transcript or notes. If no specific person is named for an element, use an empty array [].
+- Always include a "nextQuestion" for every element: a single, natural question the rep can ask on the next call to surface or deepen this element. Tailor it to specifics from this conversation when possible (reference named people, metrics, or timelines that came up). Keep it to one sentence.
 - Return a single top-level JSON object: { "elements": [ ...exactly 8 objects, one per element, in the order listed above ] }
 - Respond with JSON only. No markdown, no code fences, no preamble, no commentary.`;
 }
@@ -100,7 +102,9 @@ function normalize(parsed: unknown): AnalysisResult {
         ? match.evidence.trim()
         : "";
     const people = normalizePeople(match?.people);
-    return { element: canonical.key, status, value, evidence, people };
+    const nextQuestion =
+      typeof match?.nextQuestion === "string" ? match.nextQuestion.trim() : "";
+    return { element: canonical.key, status, value, evidence, people, nextQuestion };
   });
 
   return { elements };

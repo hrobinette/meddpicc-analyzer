@@ -57,6 +57,8 @@ function ElementCard({
   const definition = definitionFor(result.element);
 
   if (result.status === "not_addressed") {
+    const askKey = `${result.element}-ask`;
+    const isCopied = copiedKey === askKey;
     return (
       <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-5">
         <div className="flex items-center gap-2">
@@ -67,6 +69,24 @@ function ElementCard({
         <p className="mt-3 pl-4 text-sm italic text-slate-400">
           Not addressed on this call.
         </p>
+
+        {result.nextQuestion ? (
+          <div className="mt-3 rounded-lg bg-indigo-50/70 p-3 ring-1 ring-indigo-100">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-indigo-500">
+                Ask next
+              </p>
+              <button
+                type="button"
+                onClick={() => onCopy(result.nextQuestion, askKey)}
+                className="text-[11px] font-medium text-indigo-500 transition hover:text-indigo-700"
+              >
+                {isCopied ? "✓ copied" : "copy"}
+              </button>
+            </div>
+            <p className="mt-1 text-sm text-slate-700">{result.nextQuestion}</p>
+          </div>
+        ) : null}
       </div>
     );
   }

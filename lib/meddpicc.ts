@@ -60,6 +60,9 @@ export interface MeddpiccElementResult {
   value: string;
   evidence: string;
   people: Person[];
+  // A suggested question the rep should ask next time to uncover/strengthen this
+  // element. Most useful on elements the call didn't address.
+  nextQuestion: string;
 }
 
 // The top-level contract the API returns and the UI renders.
