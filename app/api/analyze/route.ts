@@ -5,19 +5,9 @@ export const runtime = "nodejs";
 // This route calls an external API per request — never cache it.
 export const dynamic = "force-dynamic";
 
-// STEP 3: return validated, structured JSON (the 8 MEDDPICC elements) instead
-// of plain text. Still uses a hardcoded transcript so it's viewable in a browser;
-// step 4 switches to POST with the rep's real transcript + notes.
-const HARDCODED_TRANSCRIPT = `
-Rep: Thanks for making time. Last call you mentioned onboarding new reps is taking too long.
-Buyer: Right — it's about six weeks to ramp someone today, and we're hiring 20 reps next quarter.
-Rep: If we could cut that to three weeks, what would that be worth?
-Buyer: Honestly that's roughly $400k in faster quota attainment. I'd need our VP of Sales, Dana, to sign off on budget though.
-Rep: Understood. Are you also looking at any other tools for this?
-Buyer: We're comparing you against building something in-house, but that's stalled.
-`.trim();
-
-export async function GET() {
+// STEP 4: accept the rep's real transcript (+ optional notes) via POST and
+// return the validated 8-element MEDDPICC result. The page calls this.
+export async function POST(request: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
     return Response.json(
       { error: "ANTHROPIC_API_KEY is not set on the server." },
@@ -25,13 +15,35 @@ export async function GET() {
     );
   }
 
+  let body: unknown;
   try {
-    const result = await analyzeTranscript(HARDCODED_TRANSCRIPT);
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Request body must be JSON." }, { status: 400 });
+  }
+
+  const transcript =
+    body && typeof body === "object" && "transcript" in body
+      ? String((body as Record<string, unknown>).transcript ?? "")
+      : "";
+  const notes =
+    body && typeof body === "object" && "notes" in body
+      ? String((body as Record<string, unknown>).notes ?? "")
+      : "";
+
+  if (!transcript.trim()) {
+    return Response.json(
+      { error: "Please paste a transcript before analyzing." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const result = await analyzeTranscript(transcript, notes);
     return Response.json(result, { status: 200 });
   } catch (err) {
     console.error("[/api/analyze] failed:", err);
     if (err instanceof AnalysisError) {
-      // The model replied but we couldn't validate it into the contract.
       return Response.json(
         { error: `Could not parse a valid analysis: ${err.message}` },
         { status: 502 },
