@@ -133,16 +133,91 @@ function buildSalesforceText(
     }
   }
 
-  // Pull the suggested questions from the elements the call didn't cover into
-  // one prioritized "ask next" list.
-  const nextSteps = cards
-    .filter((c) => c.status !== "found" && c.nextQuestion.trim())
-    .map((c) => `- ${c.nextQuestion.trim()}`);
+  const nextSteps = recommendedNextSteps(cards);
   if (nextSteps.length > 0) {
-    sections.push("", "RECOMMENDED NEXT STEPS", ...nextSteps);
+    sections.push(
+      "",
+      "RECOMMENDED NEXT STEPS",
+      ...nextSteps.map((s) => `- ${s}`),
+    );
   }
 
   return sections.join("\n");
+}
+
+// The four highest-leverage elements. We read overall deal health primarily off
+// how many of these are nailed down.
+const CORE_ELEMENTS = ["Metrics", "Economic Buyer", "Identify Pain", "Champion"];
+
+type HealthLevel = "strong" | "developing" | "at_risk";
+
+interface HealthTheme {
+  label: string;
+  wrap: string; // banner border + background
+  dot: string; // status dot
+  text: string; // label color
+}
+
+const HEALTH_THEME: Record<HealthLevel, HealthTheme> = {
+  strong: {
+    label: "Strong",
+    wrap: "border-emerald-200 bg-emerald-50/60",
+    dot: "bg-emerald-500",
+    text: "text-emerald-700",
+  },
+  developing: {
+    label: "Developing",
+    wrap: "border-amber-200 bg-amber-50/60",
+    dot: "bg-amber-500",
+    text: "text-amber-700",
+  },
+  at_risk: {
+    label: "At risk",
+    wrap: "border-rose-200 bg-rose-50/60",
+    dot: "bg-rose-500",
+    text: "text-rose-700",
+  },
+};
+
+// Pull the suggested questions from the elements the call didn't cover into one
+// prioritized "ask next" list. Shared by the banner and the Salesforce copy.
+function recommendedNextSteps(cards: MeddpiccElementResult[]): string[] {
+  return cards
+    .filter((c) => c.status !== "found" && c.nextQuestion.trim())
+    .map((c) => c.nextQuestion.trim());
+}
+
+// A deterministic, explainable read of deal health from coverage + risks.
+function dealHealth(
+  cards: MeddpiccElementResult[],
+  risks: Risk[],
+): { level: HealthLevel; coreFound: number; total: number; blurb: string } {
+  const found = new Set(
+    cards.filter((c) => c.status === "found").map((c) => c.element),
+  );
+  const coreFound = CORE_ELEMENTS.filter((k) => found.has(k)).length;
+  const total = found.size;
+  const highRisks = risks.filter((r) => r.severity === "high").length;
+  const missingCore = CORE_ELEMENTS.filter((k) => !found.has(k));
+
+  let level: HealthLevel;
+  if (coreFound <= 1) level = "at_risk";
+  else if (coreFound === 2) level = "developing";
+  else level = total >= 5 ? "strong" : "developing";
+  // A high-severity risk means it isn't truly "strong" yet.
+  if (level === "strong" && highRisks > 0) level = "developing";
+
+  const parts: string[] = [];
+  if (missingCore.length > 0) parts.push(`still open: ${missingCore.join(", ")}`);
+  if (highRisks > 0) {
+    parts.push(`${highRisks} high-severity risk${highRisks > 1 ? "s" : ""}`);
+  }
+  const blurb =
+    parts.length > 0
+      ? parts.join(" · ").replace(/^./, (ch) => ch.toUpperCase())
+      : "Core qualification is solid across the board.";
+
+  return { level, coreFound, total, blurb };
 }
 
 function Spinner() {
@@ -449,6 +524,8 @@ export default function Analyzer() {
 
   const canAnalyze = transcript.trim().length > 0 && !loading;
   const foundCount = cards?.filter((c) => c.status === "found").length ?? 0;
+  const health = cards ? dealHealth(cards, risks) : null;
+  const nextSteps = cards ? recommendedNextSteps(cards) : [];
 
   return (
     <div className="space-y-8">
@@ -588,6 +665,61 @@ export default function Analyzer() {
       {/* Results */}
       {!loading && cards ? (
         <div>
+          {/* Deal health + what to do next */}
+          {health ? (
+            <div
+              className={`mb-5 rounded-xl border p-4 ${HEALTH_THEME[health.level].wrap}`}
+            >
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex h-2.5 w-2.5 rounded-full ${HEALTH_THEME[health.level].dot}`}
+                  />
+                  <span
+                    className={`text-sm font-semibold ${HEALTH_THEME[health.level].text}`}
+                  >
+                    Deal health: {HEALTH_THEME[health.level].label}
+                  </span>
+                </span>
+                <span className="text-xs text-slate-500">
+                  {health.coreFound} of 4 core elements · {health.total} of 8 found
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">{health.blurb}</p>
+
+              {nextSteps.length > 0 ? (
+                <div className="mt-3">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                    Do next
+                  </p>
+                  <ul className="mt-1.5 space-y-1.5">
+                    {nextSteps.slice(0, 5).map((s, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-slate-700"
+                      >
+                        <svg
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M5 12h14" />
+                          <path d="m12 5 7 7-7 7" />
+                        </svg>
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold text-slate-900">
