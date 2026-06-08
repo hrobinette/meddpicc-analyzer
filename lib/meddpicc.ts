@@ -1,0 +1,47 @@
+// The 8 MEDDPICC elements, in canonical order, with the exact definitions
+// the model must use. Shared by the API route (prompt) and the UI (rendering).
+
+export const MEDDPICC_ELEMENTS = [
+  {
+    key: "Metrics",
+    definition:
+      "quantifiable business impact or value the buyer wants to achieve.",
+  },
+  {
+    key: "Economic Buyer",
+    definition: "the person with budget authority to approve the purchase.",
+  },
+  {
+    key: "Decision Criteria",
+    definition:
+      "the formal or informal criteria used to evaluate options.",
+  },
+  {
+    key: "Decision Process",
+    definition:
+      "the steps, stakeholders, and timeline to reach a decision.",
+  },
+  {
+    key: "Paper Process",
+    definition:
+      "procurement, legal, security, and contracting steps to close.",
+  },
+  {
+    key: "Identify Pain",
+    definition: "the core business pain driving the deal.",
+  },
+  {
+    key: "Champion",
+    definition:
+      "an internal advocate with influence who sells on our behalf.",
+  },
+  {
+    key: "Competition",
+    definition:
+      'alternatives being considered, including "do nothing"/status quo.',
+  },
+] as const;
+
+export type MeddpiccElementKey = (typeof MEDDPICC_ELEMENTS)[number]["key"];
+
+export const MODEL = "claude-sonnet-4-6";
