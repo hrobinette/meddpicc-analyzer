@@ -45,3 +45,16 @@ export const MEDDPICC_ELEMENTS = [
 export type MeddpiccElementKey = (typeof MEDDPICC_ELEMENTS)[number]["key"];
 
 export const MODEL = "claude-sonnet-4-6";
+
+// The validated shape returned for each of the 8 elements.
+export interface MeddpiccElementResult {
+  element: string;
+  status: "found" | "not_addressed";
+  value: string;
+  evidence: string;
+}
+
+// The top-level contract the API returns and the UI renders.
+export interface AnalysisResult {
+  elements: MeddpiccElementResult[];
+}
