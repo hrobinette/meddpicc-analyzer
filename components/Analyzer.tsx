@@ -5,6 +5,7 @@ import {
   MEDDPICC_ELEMENTS,
   type MeddpiccElementResult,
 } from "@/lib/meddpicc";
+import { EXAMPLE_TRANSCRIPT, EXAMPLE_NOTES } from "@/lib/example";
 
 function definitionFor(element: string): string {
   return MEDDPICC_ELEMENTS.find((e) => e.key === element)?.definition ?? "";
@@ -221,6 +222,13 @@ export default function Analyzer() {
     );
   }
 
+  function loadExample() {
+    setTranscript(EXAMPLE_TRANSCRIPT);
+    setNotes(EXAMPLE_NOTES);
+    setError(null);
+    setCards(null);
+  }
+
   const canAnalyze = transcript.trim().length > 0 && !loading;
   const foundCount = cards?.filter((c) => c.status === "found").length ?? 0;
 
@@ -230,12 +238,22 @@ export default function Analyzer() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="space-y-4">
           <div>
-            <label
-              htmlFor="transcript"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Call transcript
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label
+                htmlFor="transcript"
+                className="block text-sm font-medium text-slate-700"
+              >
+                Call transcript
+              </label>
+              <button
+                type="button"
+                onClick={loadExample}
+                disabled={loading}
+                className="text-xs font-medium text-indigo-600 transition hover:text-indigo-800 disabled:opacity-40"
+              >
+                Try an example
+              </button>
+            </div>
             <textarea
               id="transcript"
               value={transcript}
