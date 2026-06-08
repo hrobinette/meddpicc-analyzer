@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   MEDDPICC_ELEMENTS,
   type MeddpiccElementResult,
 } from "@/lib/meddpicc";
 import { EXAMPLE_TRANSCRIPT, EXAMPLE_NOTES } from "@/lib/example";
+
+// Persist the rep's work so an accidental refresh doesn't lose it.
+const STORAGE_KEY = "meddpicc-analyzer:v1";
 
 function definitionFor(element: string): string {
   return MEDDPICC_ELEMENTS.find((e) => e.key === element)?.definition ?? "";
@@ -92,6 +95,9 @@ function ElementCard({
     );
   }
 
+  const cardKey = `${result.element}-card`;
+  const cardCopied = copiedKey === cardKey;
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-transparent transition hover:ring-indigo-100">
       <div className="flex items-center justify-between gap-2">
@@ -99,9 +105,19 @@ function ElementCard({
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
           <h3 className="font-semibold text-slate-900">{result.element}</h3>
         </div>
-        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
-          Found
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onCopy(`${result.element}: ${result.value.trim()}`, cardKey)}
+            title="Copy this element"
+            className="text-xs font-medium text-slate-400 transition hover:text-indigo-600"
+          >
+            {cardCopied ? "✓ copied" : "copy"}
+          </button>
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+            Found
+          </span>
+        </div>
       </div>
       <p className="mt-1 pl-4 text-xs text-slate-400">{definition}</p>
 
@@ -183,6 +199,44 @@ export default function Analyzer() {
   const [error, setError] = useState<string | null>(null);
   const [cards, setCards] = useState<MeddpiccElementResult[] | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Restore any saved work on first load (browser-only).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (typeof saved.transcript === "string") setTranscript(saved.transcript);
+      if (typeof saved.notes === "string") setNotes(saved.notes);
+      if (Array.isArray(saved.cards)) setCards(saved.cards);
+    } catch {
+      // Ignore unreadable/old saved state.
+    }
+  }, []);
+
+  // Save whenever the inputs or results change.
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ transcript, notes, cards }),
+      );
+    } catch {
+      // Storage may be unavailable (private mode, etc.) — fail quietly.
+    }
+  }, [transcript, notes, cards]);
+
+  function clearAll() {
+    setTranscript("");
+    setNotes("");
+    setCards(null);
+    setError(null);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // no-op
+    }
+  }
 
   async function copy(text: string, key: string) {
     try {
@@ -296,6 +350,15 @@ export default function Analyzer() {
                 "Analyze"
               )}
             </button>
+            {!loading && (transcript || notes || cards) ? (
+              <button
+                type="button"
+                onClick={clearAll}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                Clear
+              </button>
+            ) : null}
             {loading ? (
               <span className="text-sm text-slate-500">
                 Reading the call and qualifying it…
