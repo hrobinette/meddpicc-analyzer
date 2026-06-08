@@ -46,12 +46,20 @@ export type MeddpiccElementKey = (typeof MEDDPICC_ELEMENTS)[number]["key"];
 
 export const MODEL = "claude-sonnet-4-6";
 
+// A specifically named individual mentioned for an element (e.g. the Economic
+// Buyer or Champion). `name` is copyable on its own for adding a Salesforce contact.
+export interface Person {
+  name: string;
+  title: string;
+}
+
 // The validated shape returned for each of the 8 elements.
 export interface MeddpiccElementResult {
   element: string;
   status: "found" | "not_addressed";
   value: string;
   evidence: string;
+  people: Person[];
 }
 
 // The top-level contract the API returns and the UI renders.

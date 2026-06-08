@@ -4,6 +4,7 @@ import {
   MODEL,
   type AnalysisResult,
   type MeddpiccElementResult,
+  type Person,
 } from "@/lib/meddpicc";
 
 // Thrown when the model's reply can't be parsed/validated into the contract.
@@ -29,8 +30,10 @@ Rules:
     "element": "<the exact element name from the list above>",
     "status": "found" | "not_addressed",
     "value": "<concise summary of what was found, or empty string>",
-    "evidence": "<short supporting quote or paraphrase from the input, or empty string>"
+    "evidence": "<short supporting quote or paraphrase from the input, or empty string>",
+    "people": [ { "name": "<person's name>", "title": "<their role/title, or empty string>" } ]
   }
+- In "people", list any specifically named individuals relevant to that element — most often the Economic Buyer and the Champion, but also any named stakeholders. Only include a person when an actual name is given in the transcript or notes. If no specific person is named for an element, use an empty array [].
 - Return a single top-level JSON object: { "elements": [ ...exactly 8 objects, one per element, in the order listed above ] }
 - Respond with JSON only. No markdown, no code fences, no preamble, no commentary.`;
 }
@@ -48,6 +51,21 @@ function extractJson(raw: string): string {
     text = text.slice(first, last + 1);
   }
   return text;
+}
+
+// Pull named individuals out of an element, keeping only entries with a real name.
+function normalizePeople(raw: unknown): Person[] {
+  if (!Array.isArray(raw)) return [];
+  const people: Person[] = [];
+  for (const item of raw) {
+    if (item && typeof item === "object" && "name" in item) {
+      const name = String((item as Record<string, unknown>).name ?? "").trim();
+      if (!name) continue;
+      const title = String((item as Record<string, unknown>).title ?? "").trim();
+      people.push({ name, title });
+    }
+  }
+  return people;
 }
 
 // Turn whatever the model returned into exactly 8 well-formed elements in
@@ -81,7 +99,8 @@ function normalize(parsed: unknown): AnalysisResult {
       status === "found" && typeof match?.evidence === "string"
         ? match.evidence.trim()
         : "";
-    return { element: canonical.key, status, value, evidence };
+    const people = normalizePeople(match?.people);
+    return { element: canonical.key, status, value, evidence, people };
   });
 
   return { elements };
