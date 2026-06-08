@@ -13,7 +13,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <div className="min-h-screen">
+          <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur">
+            <div className="mx-auto flex h-14 max-w-5xl items-center gap-2.5 px-6">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600 text-sm font-bold text-white shadow-sm">
+                M
+              </span>
+              <span className="font-semibold tracking-tight text-slate-900">
+                MEDDPICC Analyzer
+              </span>
+            </div>
+          </header>
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
