@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   MEDDPICC_ELEMENTS,
+  type EmailDraft,
   type MeddpiccElementResult,
   type Risk,
 } from "@/lib/meddpicc";
@@ -282,6 +283,8 @@ export default function Analyzer() {
   const [error, setError] = useState<string | null>(null);
   const [cards, setCards] = useState<MeddpiccElementResult[] | null>(null);
   const [risks, setRisks] = useState<Risk[]>([]);
+  const [emailDraft, setEmailDraft] = useState<EmailDraft | null>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Restore any saved work on first load (browser-only).
@@ -294,6 +297,9 @@ export default function Analyzer() {
       if (typeof saved.notes === "string") setNotes(saved.notes);
       if (Array.isArray(saved.cards)) setCards(saved.cards);
       if (Array.isArray(saved.risks)) setRisks(saved.risks);
+      if (saved.emailDraft && typeof saved.emailDraft === "object") {
+        setEmailDraft(saved.emailDraft);
+      }
     } catch {
       // Ignore unreadable/old saved state.
     }
@@ -304,18 +310,19 @@ export default function Analyzer() {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ transcript, notes, cards, risks }),
+        JSON.stringify({ transcript, notes, cards, risks, emailDraft }),
       );
     } catch {
       // Storage may be unavailable (private mode, etc.) — fail quietly.
     }
-  }, [transcript, notes, cards, risks]);
+  }, [transcript, notes, cards, risks, emailDraft]);
 
   function clearAll() {
     setTranscript("");
     setNotes("");
     setCards(null);
     setRisks([]);
+    setEmailDraft(null);
     setError(null);
     try {
       localStorage.removeItem(STORAGE_KEY);
@@ -337,6 +344,7 @@ export default function Analyzer() {
   async function handleAnalyze() {
     setLoading(true);
     setError(null);
+    setEmailDraft(null);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -369,6 +377,32 @@ export default function Analyzer() {
     setNotes(EXAMPLE_NOTES);
     setError(null);
     setCards(null);
+    setEmailDraft(null);
+  }
+
+  async function handleDraftEmail() {
+    if (!cards) return;
+    setEmailLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript, notes, elements: cards, risks }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Something went wrong.");
+      }
+      setEmailDraft({
+        subject: String(data.subject ?? ""),
+        body: String(data.body ?? ""),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't draft the email.");
+    } finally {
+      setEmailLoading(false);
+    }
   }
 
   const canAnalyze = transcript.trim().length > 0 && !loading;
@@ -484,13 +518,45 @@ export default function Analyzer() {
                 {foundCount} of 8 found
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => copy(buildSalesforceText(cards), "salesforce")}
-              className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-blue-300"
-            >
-              {copiedKey === "salesforce" ? "✓ Copied" : "Copy for Salesforce"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDraftEmail}
+                disabled={emailLoading}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {emailLoading ? (
+                  <>
+                    <Spinner />
+                    Drafting…
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="h-4 w-4 text-slate-400"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect width="20" height="16" x="2" y="4" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                    {emailDraft ? "Redraft email" : "Draft follow-up email"}
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => copy(buildSalesforceText(cards), "salesforce")}
+                className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-blue-300"
+              >
+                {copiedKey === "salesforce" ? "✓ Copied" : "Copy for Salesforce"}
+              </button>
+            </div>
           </div>
 
           <p className="mt-1 text-xs text-slate-400">
@@ -561,6 +627,73 @@ export default function Analyzer() {
               No major red flags on this call.
             </div>
           )}
+
+          {/* Follow-up email draft */}
+          {emailDraft ? (
+            <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/40 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <svg
+                    className="h-4 w-4 text-brand-blue"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect width="20" height="16" x="2" y="4" rx="2" />
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                  </svg>
+                  Follow-up email
+                </h3>
+                <button
+                  type="button"
+                  onClick={() =>
+                    copy(
+                      `Subject: ${emailDraft.subject}\n\n${emailDraft.body}`,
+                      "email",
+                    )
+                  }
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-blue-300"
+                >
+                  {copiedKey === "email" ? "✓ Copied" : "Copy email"}
+                </button>
+              </div>
+
+              <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Subject
+              </label>
+              <input
+                value={emailDraft.subject}
+                onChange={(e) =>
+                  setEmailDraft((prev) =>
+                    prev ? { ...prev, subject: e.target.value } : prev,
+                  )
+                }
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-blue-100"
+              />
+
+              <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Body
+              </label>
+              <textarea
+                value={emailDraft.body}
+                onChange={(e) =>
+                  setEmailDraft((prev) =>
+                    prev ? { ...prev, body: e.target.value } : prev,
+                  )
+                }
+                rows={12}
+                className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed text-slate-800 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-blue-100"
+              />
+
+              <p className="mt-2 text-xs text-slate-400">
+                Drafted from this call — review and edit before sending.
+              </p>
+            </div>
+          ) : null}
 
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
             {cards.map((el, i) => (

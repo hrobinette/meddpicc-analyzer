@@ -77,3 +77,9 @@ export interface AnalysisResult {
   elements: MeddpiccElementResult[];
   risks: Risk[];
 }
+
+// A drafted follow-up email the rep can copy/edit after a call.
+export interface EmailDraft {
+  subject: string;
+  body: string;
+}
