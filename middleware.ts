@@ -1,38 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
+import { AUTH_COOKIE, authToken } from "@/lib/auth";
 
-// Simple password gate for the whole app (pages + API route).
+// Password gate for the whole app, backed by a session cookie + branded /login.
 //
 // Protection turns ON only when APP_PASSWORD is set in the environment.
-// - In Vercel: Project → Settings → Environment Variables → add APP_PASSWORD
-//   (and optionally APP_USERNAME; defaults to "team"). Redeploy to apply.
+// - In Vercel: Project → Settings → Environment Variables → APP_PASSWORD.
 // - If APP_PASSWORD is not set (e.g. local dev), the app stays open.
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const password = process.env.APP_PASSWORD;
   if (!password) {
     return NextResponse.next(); // Not configured → no gate.
   }
 
-  const expectedUser = process.env.APP_USERNAME || "team";
-  const header = req.headers.get("authorization");
+  const { pathname } = req.nextUrl;
 
-  if (header?.startsWith("Basic ")) {
-    const decoded = atob(header.slice(6)); // "user:pass"
-    const sep = decoded.indexOf(":");
-    const user = decoded.slice(0, sep);
-    const pass = decoded.slice(sep + 1);
-    if (user === expectedUser && pass === password) {
-      return NextResponse.next();
-    }
+  // Always allow the login page and its endpoints.
+  if (
+    pathname === "/login" ||
+    pathname === "/api/login" ||
+    pathname === "/api/logout"
+  ) {
+    return NextResponse.next();
   }
 
-  // Prompt the browser's native login dialog.
-  return new NextResponse("Authentication required.", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="MEDDPICC Analyzer"' },
-  });
+  const expected = await authToken(password);
+  const token = req.cookies.get(AUTH_COOKIE)?.value;
+  if (token && token === expected) {
+    return NextResponse.next();
+  }
+
+  // Not signed in: API calls get a clean 401, page loads go to the login screen.
+  if (pathname.startsWith("/api")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const url = req.nextUrl.clone();
+  url.pathname = "/login";
+  url.search = "";
+  return NextResponse.redirect(url);
 }
 
-// Run on everything except Next.js internals and static assets.
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
