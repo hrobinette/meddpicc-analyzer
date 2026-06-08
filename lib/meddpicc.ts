@@ -65,7 +65,15 @@ export interface MeddpiccElementResult {
   nextQuestion: string;
 }
 
+// A qualification red flag surfaced from the call.
+export interface Risk {
+  title: string;
+  detail: string;
+  severity: "high" | "medium";
+}
+
 // The top-level contract the API returns and the UI renders.
 export interface AnalysisResult {
   elements: MeddpiccElementResult[];
+  risks: Risk[];
 }

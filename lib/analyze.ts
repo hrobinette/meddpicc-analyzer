@@ -5,6 +5,7 @@ import {
   type AnalysisResult,
   type MeddpiccElementResult,
   type Person,
+  type Risk,
 } from "@/lib/meddpicc";
 
 // Thrown when the model's reply can't be parsed/validated into the contract.
@@ -36,7 +37,9 @@ Rules:
   }
 - In "people", list any specifically named individuals relevant to that element — most often the Economic Buyer and the Champion, but also any named stakeholders. Only include a person when an actual name is given in the transcript or notes. If no specific person is named for an element, use an empty array [].
 - Always include a "nextQuestion" for every element: a single, natural question the rep can ask on the next call to surface or deepen this element. Tailor it to specifics from this conversation when possible (reference named people, metrics, or timelines that came up). Keep it to one sentence.
-- Return a single top-level JSON object: { "elements": [ ...exactly 8 objects, one per element, in the order listed above ] }
+- Also return a top-level "risks" array of qualification red flags evident from the call. Consider: no economic buyer identified, only one contact engaged (single-threaded), competing mainly against the status quo / "do nothing", no internal champion, no quantified business impact, or no clear timeline. Only include genuine risks supported by what is present or clearly missing — it is fine to return few or none. Each risk has this shape:
+  { "title": "<short risk label>", "detail": "<one-sentence explanation grounded in the call>", "severity": "high" | "medium" }
+- Return a single top-level JSON object: { "elements": [ ...exactly 8 objects, one per element, in the order listed above ], "risks": [ ...0 or more risk objects ] }
 - Respond with JSON only. No markdown, no code fences, no preamble, no commentary.`;
 }
 
@@ -53,6 +56,23 @@ function extractJson(raw: string): string {
     text = text.slice(first, last + 1);
   }
   return text;
+}
+
+// Validate the risks array, keeping only entries with a real title (max 6).
+function normalizeRisks(raw: unknown): Risk[] {
+  if (!Array.isArray(raw)) return [];
+  const risks: Risk[] = [];
+  for (const item of raw) {
+    if (item && typeof item === "object" && "title" in item) {
+      const obj = item as Record<string, unknown>;
+      const title = String(obj.title ?? "").trim();
+      if (!title) continue;
+      const detail = String(obj.detail ?? "").trim();
+      const severity = obj.severity === "high" ? "high" : "medium";
+      risks.push({ title, detail, severity });
+    }
+  }
+  return risks.slice(0, 6);
 }
 
 // Pull named individuals out of an element, keeping only entries with a real name.
@@ -107,7 +127,9 @@ function normalize(parsed: unknown): AnalysisResult {
     return { element: canonical.key, status, value, evidence, people, nextQuestion };
   });
 
-  return { elements };
+  const risks = normalizeRisks((parsed as { risks?: unknown }).risks);
+
+  return { elements, risks };
 }
 
 /**

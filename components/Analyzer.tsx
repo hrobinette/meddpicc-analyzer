@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   MEDDPICC_ELEMENTS,
   type MeddpiccElementResult,
+  type Risk,
 } from "@/lib/meddpicc";
 import { EXAMPLE_TRANSCRIPT, EXAMPLE_NOTES } from "@/lib/example";
 
@@ -280,6 +281,7 @@ export default function Analyzer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cards, setCards] = useState<MeddpiccElementResult[] | null>(null);
+  const [risks, setRisks] = useState<Risk[]>([]);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Restore any saved work on first load (browser-only).
@@ -291,6 +293,7 @@ export default function Analyzer() {
       if (typeof saved.transcript === "string") setTranscript(saved.transcript);
       if (typeof saved.notes === "string") setNotes(saved.notes);
       if (Array.isArray(saved.cards)) setCards(saved.cards);
+      if (Array.isArray(saved.risks)) setRisks(saved.risks);
     } catch {
       // Ignore unreadable/old saved state.
     }
@@ -301,17 +304,18 @@ export default function Analyzer() {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ transcript, notes, cards }),
+        JSON.stringify({ transcript, notes, cards, risks }),
       );
     } catch {
       // Storage may be unavailable (private mode, etc.) — fail quietly.
     }
-  }, [transcript, notes, cards]);
+  }, [transcript, notes, cards, risks]);
 
   function clearAll() {
     setTranscript("");
     setNotes("");
     setCards(null);
+    setRisks([]);
     setError(null);
     try {
       localStorage.removeItem(STORAGE_KEY);
@@ -344,9 +348,11 @@ export default function Analyzer() {
         throw new Error(data?.error ?? "Something went wrong.");
       }
       setCards(data.elements as MeddpiccElementResult[]);
+      setRisks(Array.isArray(data.risks) ? (data.risks as Risk[]) : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setCards(null);
+      setRisks([]);
     } finally {
       setLoading(false);
     }
@@ -491,6 +497,70 @@ export default function Analyzer() {
             Edit any summary before copying. Click a person’s name to copy it for a
             Salesforce contact.
           </p>
+
+          {/* Risks & red flags */}
+          {risks.length > 0 ? (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                <svg
+                  className="h-4 w-4 text-amber-500"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <path d="M12 9v4" />
+                  <path d="M12 17h.01" />
+                </svg>
+                Risks &amp; red flags
+              </h3>
+              <ul className="mt-3 space-y-2.5">
+                {risks.map((r, i) => (
+                  <li key={i} className="flex gap-2.5">
+                    <span
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                        r.severity === "high" ? "bg-red-500" : "bg-amber-500"
+                      }`}
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">
+                        {r.title}
+                        {r.severity === "high" ? (
+                          <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700">
+                            High
+                          </span>
+                        ) : null}
+                      </p>
+                      {r.detail ? (
+                        <p className="mt-0.5 text-xs text-slate-500">{r.detail}</p>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 text-sm text-emerald-700">
+              <svg
+                className="h-4 w-4 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21.801 10A10 10 0 1 1 17 3.335" />
+                <path d="m9 11 3 3L22 4" />
+              </svg>
+              No major red flags on this call.
+            </div>
+          )}
 
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
             {cards.map((el, i) => (
