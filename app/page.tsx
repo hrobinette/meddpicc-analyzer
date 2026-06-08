@@ -5,7 +5,11 @@ export default function Home() {
     <main className="mx-auto max-w-5xl px-6 py-10">
       <header className="mb-8 max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          Turn a sales call into a MEDDPICC summary
+          Turn a sales call into a{" "}
+          <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            MEDDPICC
+          </span>{" "}
+          summary
         </h1>
         <p className="mt-2 text-slate-600">
           Paste a transcript and get a clean qualification breakdown as cards — so

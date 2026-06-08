@@ -10,6 +10,83 @@ import { EXAMPLE_TRANSCRIPT, EXAMPLE_NOTES } from "@/lib/example";
 // Persist the rep's work so an accidental refresh doesn't lose it.
 const STORAGE_KEY = "meddpicc-analyzer:v1";
 
+// Each MEDDPICC element gets its own color so the grid is colorful and scannable.
+// Full literal class strings (no interpolation) so they're always generated.
+interface ElementTheme {
+  bar: string; // top accent border
+  dot: string; // status dot (found)
+  dotMuted: string; // status dot (not addressed)
+  title: string; // element name color
+  pill: string; // "Found" badge bg/text/ring
+}
+
+const ELEMENT_THEME_DEFAULT: ElementTheme = {
+  bar: "border-t-indigo-400",
+  dot: "bg-indigo-500",
+  dotMuted: "bg-indigo-200",
+  title: "text-indigo-800",
+  pill: "bg-indigo-50 text-indigo-700 ring-indigo-100",
+};
+
+const ELEMENT_THEME: Record<string, ElementTheme> = {
+  Metrics: {
+    bar: "border-t-indigo-400",
+    dot: "bg-indigo-500",
+    dotMuted: "bg-indigo-200",
+    title: "text-indigo-800",
+    pill: "bg-indigo-50 text-indigo-700 ring-indigo-100",
+  },
+  "Economic Buyer": {
+    bar: "border-t-sky-400",
+    dot: "bg-sky-500",
+    dotMuted: "bg-sky-200",
+    title: "text-sky-800",
+    pill: "bg-sky-50 text-sky-700 ring-sky-100",
+  },
+  "Decision Criteria": {
+    bar: "border-t-teal-400",
+    dot: "bg-teal-500",
+    dotMuted: "bg-teal-200",
+    title: "text-teal-800",
+    pill: "bg-teal-50 text-teal-700 ring-teal-100",
+  },
+  "Decision Process": {
+    bar: "border-t-emerald-400",
+    dot: "bg-emerald-500",
+    dotMuted: "bg-emerald-200",
+    title: "text-emerald-800",
+    pill: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  },
+  "Paper Process": {
+    bar: "border-t-amber-400",
+    dot: "bg-amber-500",
+    dotMuted: "bg-amber-200",
+    title: "text-amber-800",
+    pill: "bg-amber-50 text-amber-700 ring-amber-100",
+  },
+  "Identify Pain": {
+    bar: "border-t-rose-400",
+    dot: "bg-rose-500",
+    dotMuted: "bg-rose-200",
+    title: "text-rose-800",
+    pill: "bg-rose-50 text-rose-700 ring-rose-100",
+  },
+  Champion: {
+    bar: "border-t-violet-400",
+    dot: "bg-violet-500",
+    dotMuted: "bg-violet-200",
+    title: "text-violet-800",
+    pill: "bg-violet-50 text-violet-700 ring-violet-100",
+  },
+  Competition: {
+    bar: "border-t-orange-400",
+    dot: "bg-orange-500",
+    dotMuted: "bg-orange-200",
+    title: "text-orange-800",
+    pill: "bg-orange-50 text-orange-700 ring-orange-100",
+  },
+};
+
 function definitionFor(element: string): string {
   return MEDDPICC_ELEMENTS.find((e) => e.key === element)?.definition ?? "";
 }
@@ -59,6 +136,7 @@ function ElementCard({
   copiedKey,
 }: ElementCardProps) {
   const definition = definitionFor(result.element);
+  const theme = ELEMENT_THEME[result.element] ?? ELEMENT_THEME_DEFAULT;
 
   if (result.status === "not_addressed") {
     const askKey = `${result.element}-ask`;
@@ -66,7 +144,7 @@ function ElementCard({
     return (
       <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-5">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-slate-300" />
+          <span className={`h-2 w-2 rounded-full ${theme.dotMuted}`} />
           <h3 className="font-semibold text-slate-500">{result.element}</h3>
         </div>
         <p className="mt-1 pl-4 text-xs text-slate-400">{definition}</p>
@@ -99,11 +177,13 @@ function ElementCard({
   const cardCopied = copiedKey === cardKey;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-transparent transition hover:ring-indigo-100">
+    <div
+      className={`rounded-xl border border-t-4 border-slate-200 ${theme.bar} bg-white p-5 shadow-sm transition hover:shadow-md`}
+    >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          <h3 className="font-semibold text-slate-900">{result.element}</h3>
+          <span className={`h-2 w-2 rounded-full ${theme.dot}`} />
+          <h3 className={`font-semibold ${theme.title}`}>{result.element}</h3>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -114,7 +194,9 @@ function ElementCard({
           >
             {cardCopied ? "✓ copied" : "copy"}
           </button>
-          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${theme.pill}`}
+          >
             Found
           </span>
         </div>
@@ -339,7 +421,7 @@ export default function Analyzer() {
             <button
               onClick={handleAnalyze}
               disabled={!canAnalyze}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-indigo-700 hover:to-violet-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? (
                 <>
@@ -399,7 +481,7 @@ export default function Analyzer() {
             <button
               type="button"
               onClick={() => copy(buildSalesforceText(cards), "salesforce")}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-indigo-700 hover:to-violet-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
             >
               {copiedKey === "salesforce" ? "✓ Copied" : "Copy for Salesforce"}
             </button>
