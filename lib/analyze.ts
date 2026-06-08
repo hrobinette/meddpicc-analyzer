@@ -149,10 +149,18 @@ export async function analyzeTranscript(
 
   const message = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 2048,
+    max_tokens: 4096,
     system: buildSystemPrompt(),
     messages: [{ role: "user", content: userContent }],
   });
+
+  // If the model ran out of room, the JSON is almost certainly truncated —
+  // give a clear, actionable error instead of a confusing "invalid JSON".
+  if (message.stop_reason === "max_tokens") {
+    throw new AnalysisError(
+      "The call was too long to analyze in one pass. Try the key sections or a shorter excerpt.",
+    );
+  }
 
   const rawText = message.content
     .map((block) => (block.type === "text" ? block.text : ""))

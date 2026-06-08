@@ -79,10 +79,16 @@ export async function draftFollowUpEmail(
 
   const message = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 1024,
+    max_tokens: 1536,
     system: buildSystemPrompt(),
     messages: [{ role: "user", content: userContent }],
   });
+
+  if (message.stop_reason === "max_tokens") {
+    throw new EmailError(
+      "The call was too long to draft from in one pass. Try a shorter excerpt.",
+    );
+  }
 
   const rawText = message.content
     .map((block) => (block.type === "text" ? block.text : ""))

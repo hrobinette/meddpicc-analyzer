@@ -12,6 +12,10 @@ import { EXAMPLE_TRANSCRIPT, EXAMPLE_NOTES } from "@/lib/example";
 // Persist the rep's work so an accidental refresh doesn't lose it.
 const STORAGE_KEY = "meddpicc-analyzer:v1";
 
+// Above this length we warn that a very long call may be slow or hit the
+// model's output limit. Roughly a long (60-min+) transcript.
+const LONG_TRANSCRIPT_CHARS = 50_000;
+
 // Each MEDDPICC element gets its own color so the grid is colorful and scannable.
 // Full literal class strings (no interpolation) so they're always generated.
 interface ElementTheme {
@@ -93,14 +97,52 @@ function definitionFor(element: string): string {
   return MEDDPICC_ELEMENTS.find((e) => e.key === element)?.definition ?? "";
 }
 
-function buildSalesforceText(cards: MeddpiccElementResult[]): string {
-  return cards
-    .map((c) =>
-      c.status === "found"
-        ? `${c.element}: ${c.value.trim()}`
-        : `${c.element}: (not addressed on this call)`,
-    )
-    .join("\n");
+// Build a CRM-ready plain-text summary: the 8 elements with their stakeholders
+// and evidence, plus the risks and a consolidated next-steps list. Kept as plain
+// text with simple indentation so it pastes cleanly into a Salesforce note.
+function buildSalesforceText(
+  cards: MeddpiccElementResult[],
+  risks: Risk[],
+): string {
+  const foundCount = cards.filter((c) => c.status === "found").length;
+  const sections: string[] = [`MEDDPICC SUMMARY (${foundCount} of 8 found)`, ""];
+
+  for (const c of cards) {
+    if (c.status === "found") {
+      sections.push(`${c.element}: ${c.value.trim()}`);
+      if (c.people.length > 0) {
+        const who = c.people
+          .map((p) => (p.title ? `${p.name} (${p.title})` : p.name))
+          .join(", ");
+        sections.push(`  Stakeholders: ${who}`);
+      }
+      if (c.evidence.trim()) {
+        sections.push(`  Evidence: "${c.evidence.trim()}"`);
+      }
+    } else {
+      sections.push(`${c.element}: (not addressed on this call)`);
+    }
+  }
+
+  if (risks.length > 0) {
+    sections.push("", "RISKS & RED FLAGS");
+    for (const r of risks) {
+      const sev = r.severity === "high" ? "[HIGH] " : "";
+      const detail = r.detail.trim() ? ` — ${r.detail.trim()}` : "";
+      sections.push(`- ${sev}${r.title.trim()}${detail}`);
+    }
+  }
+
+  // Pull the suggested questions from the elements the call didn't cover into
+  // one prioritized "ask next" list.
+  const nextSteps = cards
+    .filter((c) => c.status !== "found" && c.nextQuestion.trim())
+    .map((c) => `- ${c.nextQuestion.trim()}`);
+  if (nextSteps.length > 0) {
+    sections.push("", "RECOMMENDED NEXT STEPS", ...nextSteps);
+  }
+
+  return sections.join("\n");
 }
 
 function Spinner() {
@@ -438,6 +480,26 @@ export default function Analyzer() {
               placeholder="Paste the full sales call transcript here…"
               className="mt-1.5 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm shadow-sm transition focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
+            {transcript.length > LONG_TRANSCRIPT_CHARS ? (
+              <p className="mt-1.5 flex items-start gap-1.5 text-xs text-amber-600">
+                <svg
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <path d="M12 9v4" />
+                  <path d="M12 17h.01" />
+                </svg>
+                Long transcript — analysis may take longer, and very long calls
+                can hit the model&apos;s limit. If it fails, try the key sections.
+              </p>
+            ) : null}
           </div>
 
           <div>
@@ -568,7 +630,7 @@ export default function Analyzer() {
               </button>
               <button
                 type="button"
-                onClick={() => copy(buildSalesforceText(cards), "salesforce")}
+                onClick={() => copy(buildSalesforceText(cards, risks), "salesforce")}
                 className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-navy focus:outline-none focus:ring-2 focus:ring-blue-300"
               >
                 {copiedKey === "salesforce" ? "✓ Copied" : "Copy for Salesforce"}
